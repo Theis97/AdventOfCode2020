@@ -11,39 +11,40 @@ struct Rule {
     std::vector<std::vector<int>> subrules;
 };
 
-std::pair<bool, int> MatchRule(std::map<int, Rule>& rules, const std::string& message, Rule rule, int index) {
-    if (rule.isTerminal) {
-        return std::pair<bool, int>(message[index] == rule.terminal, 1);
+// Returns the lengths of all possible matches
+std::vector<int> MatchRule(std::map<int, Rule>& rules, const std::string& message, Rule rule, int index) {
+    if (rule.isTerminal && message[index] == rule.terminal) {
+        return std::vector<int>{1};
     }
 
-    bool foundMatch = false;
-    int matchLength = 0;
+    std::vector<int> matchLengths;
     for (int i = 0; i < rule.subrules.size(); i++) {
         std::vector<int> subrule = rule.subrules[i];
-        bool subruleMatched = true;
-        int subruleMatchLength = 0;
+        std::vector<int> submatchLengths{0};
+
         for (int j = 0; j < subrule.size(); j++) {
             int ruleNum = subrule[j];
-            std::pair<bool, int> match = MatchRule(rules, message, rules[ruleNum], index + subruleMatchLength);
-            if (!match.first) {
-                subruleMatched = false;
-                break;
+            std::vector<int> matches;
+            std::vector<int> newSubmatchLengths;
+
+            for (auto length : submatchLengths) {
+                matches = MatchRule(rules, message, rules[ruleNum], index + length);
+                for (auto nextMatch : matches) {
+                    newSubmatchLengths.push_back(length + nextMatch);
+                }
             }
-            subruleMatchLength += match.second;
+            submatchLengths = newSubmatchLengths;
         }
-        if (subruleMatched) {
-            foundMatch = true;
-            matchLength += subruleMatchLength;
-            break;
+        for (auto length : submatchLengths) {
+            matchLengths.push_back(length);
         }
     }
-
-    return std::pair<bool, int>(foundMatch, matchLength);
+    return matchLengths;
 }
 
 int main() {
     std::ifstream inputFile;
-    inputFile.open("day19.txt");
+    inputFile.open("day19part2.txt");
     if (!inputFile.is_open()) {
         std::cout << "File could not be opened.\n";
         return 0;
@@ -83,9 +84,14 @@ int main() {
 
     int matchingMessages = 0;
     while (std::getline(inputFile, line)) {
-        std::pair<bool, int> match = MatchRule(rules, line, rules[0], 0);
-        if (match.first && match.second == line.length()) {
-            matchingMessages++;
+        std::vector<int> matches = MatchRule(rules, line, rules[0], 0);
+        if (!matches.empty()) {
+            for (auto length : matches) {
+                if (length == line.length()) {
+                    matchingMessages++;
+                    break;
+                }
+            }
         }
     }
 
