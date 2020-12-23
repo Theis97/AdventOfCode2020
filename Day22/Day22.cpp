@@ -15,13 +15,22 @@ std::pair<bool, int> PlayRecursiveCombat(std::vector<std::deque<int>> decks, std
     }
 
     std::vector<std::deque<int>> startingDecks = decks;
-    std::set<std::vector<std::deque<int>>> previousRounds;
+    std::set<std::vector<int>> previousRounds;
     while (decks[0].size() > 0 && decks[1].size() > 0) {
-        if (previousRounds.count(decks) == 1) {
+        std::vector<int> gameState;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < decks[i].size(); j++) {
+                gameState.push_back(decks[i][j]);
+            }
+            // Mark the end of a player's deck
+            gameState.push_back(-1);
+        }
+
+        if (previousRounds.count(gameState) == 1) {
             // We *could* actually calculate a score here, but eeeeh
             return std::pair<bool, int>(true, -1);
         }
-        previousRounds.insert(decks);
+        previousRounds.insert(gameState);
 
         if (decks[0].front() <= decks[0].size() - 1 
             && decks[1].front() <= decks[1].size() - 1) {
