@@ -15,15 +15,15 @@ std::pair<bool, int> PlayRecursiveCombat(std::vector<std::deque<int>> decks, std
     }
 
     std::vector<std::deque<int>> startingDecks = decks;
-    std::set<std::vector<int>> previousRounds;
+    std::set<std::string> previousRounds;
     while (decks[0].size() > 0 && decks[1].size() > 0) {
-        std::vector<int> gameState;
+        std::string gameState = "";
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < decks[i].size(); j++) {
-                gameState.push_back(decks[i][j]);
+                gameState += decks[i][j];
             }
             // Mark the end of a player's deck
-            gameState.push_back(-1);
+            gameState += ".";
         }
 
         if (previousRounds.count(gameState) == 1) {
