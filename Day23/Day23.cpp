@@ -2,21 +2,10 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <algorithm>
+#include <set>
 
-int RemoveNext(std::vector<int>& v, int value) {
-    auto it = std::find(v.begin(), v.end(), value);
-    if (it == v.end() - 1) {
-        int nextVal = v[0];
-        v.erase(v.begin());
-        return nextVal;
-    }
-    int nextVal = *++it;
-    v.erase(it);
-    return nextVal;
-}
-
-const int numMoves = 100;
+const int numMoves = 10000000;
+const int totalCups = 1000000;
 
 int main() {
     std::ifstream inputFile;
@@ -28,47 +17,61 @@ int main() {
 
     std::string line;
     std::getline(inputFile, line);
-    std::vector<int> cups;
-    for (auto c : line) {
-        cups.push_back(c - '0');
+    std::vector<int> cups(totalCups + 1); // extra one because we ignore index 0
+
+    for (int i = 0; i < line.length() - 1; i++) {
+        int cup = line[i] - '0';
+        int nextCup = line[i + 1] - '0';
+        cups[cup] = nextCup;
     }
 
-    int currentCup = cups[0];
+    if (totalCups > line.length()) {
+        // We're assuming that 9 is the largest label we're given
+        cups[line[line.size()-1] - '0'] = 10;
+        for (int i = 10; i < totalCups; i++) {
+            cups[i] = i + 1;
+        }
+        cups[totalCups] = line[0] - '0';
+    }
+    else {
+        cups[line[line.size() - 1] - '0'] = line[0] - '0';
+    }
+
+    int currentCup = line[0] - '0';
     for (int i = 0; i < numMoves; i++) {
-        std::vector<int> removedCups;
-        for (int j = 0; j < 3; j++) {
-            removedCups.push_back(RemoveNext(cups, currentCup));
+        int minCup = 1;
+        int maxCup = totalCups;
+
+        int movingCupOne = cups[currentCup];
+        minCup = movingCupOne == minCup ? minCup + 1 : minCup;
+        maxCup = movingCupOne == maxCup ? maxCup - 1 : maxCup;
+        int movingCupTwo = cups[movingCupOne];
+        minCup = movingCupTwo == minCup ? minCup + 1 : minCup;
+        maxCup = movingCupTwo == maxCup ? maxCup - 1 : maxCup;
+        int movingCupThree = cups[movingCupTwo];
+        minCup = movingCupThree == minCup ? minCup + 1 : minCup;
+        maxCup = movingCupThree == maxCup ? maxCup - 1 : maxCup;
+
+        cups[currentCup] = cups[movingCupThree];
+
+        int destination = currentCup - 1;
+        while (destination == movingCupOne || destination == movingCupTwo || destination == movingCupThree) {
+            destination--;
+            if (destination < minCup) {
+                destination = maxCup;
+            }
+        }
+        if (destination < minCup) {
+            destination = maxCup;
         }
 
-        int destinationCup = currentCup - 1;
-        int maxCupValue = *std::max_element(cups.begin(), cups.end());
-        int minCupValue = *std::min_element(cups.begin(), cups.end());
-        while ((std::find(removedCups.begin(), removedCups.end(), destinationCup) != removedCups.end()) && destinationCup > 0) {
-            destinationCup--;
-        }
-        if (destinationCup < minCupValue) {
-            destinationCup = maxCupValue;
-        }
-        auto destination = std::find(cups.begin(), cups.end(), destinationCup);
+        cups[movingCupThree] = cups[destination];
+        cups[destination] = movingCupOne;
+        cups[movingCupOne] = movingCupTwo;
+        cups[movingCupTwo] = movingCupThree;
 
-        destination++;
-        if (destination == cups.end()) {
-            destination = cups.begin();
-        }
-        cups.insert(destination, removedCups.begin(), removedCups.end());
-
-        auto currentCupPos = std::find(cups.begin(), cups.end(), currentCup);
-        currentCupPos++;
-        if (currentCupPos == cups.end()) {
-            currentCup = cups[0];
-        }
-        else {
-            currentCup = *currentCupPos;
-        }
+        currentCup = cups[currentCup];
     }
-
-    for (auto cup : cups) {
-        std::cout << cup << ", ";
-    }
-    std::cout << "\n";
+    std::cout << cups[1] << " and " << cups[cups[1]] << "\n";
+    std::cout << "Answer is " << (long long)cups[1] * (long long)cups[cups[1]] << "\n";
 }
