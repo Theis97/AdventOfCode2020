@@ -2,6 +2,21 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <vector>
+
+const int days = 100;
+
+std::vector<std::pair<int, int>> GetNeighbors(std::pair<int, int> hex) {
+	std::vector<std::pair<int, int>> neighbors;
+	neighbors.reserve(6);
+	neighbors.push_back(std::pair<int, int>(hex.first + 2, hex.second));
+	neighbors.push_back(std::pair<int, int>(hex.first - 2, hex.second));
+	neighbors.push_back(std::pair<int, int>(hex.first - 1, hex.second - 1));
+	neighbors.push_back(std::pair<int, int>(hex.first - 1, hex.second + 1));
+	neighbors.push_back(std::pair<int, int>(hex.first + 1, hex.second - 1));
+	neighbors.push_back(std::pair<int, int>(hex.first + 1, hex.second + 1));
+	return neighbors;
+}
 
 int main() {
 	std::ifstream inputFile;
@@ -60,4 +75,34 @@ int main() {
 		}
 	}
 	std::cout << flippedHexes.size() << " tiles are black side up after installation\n";
+
+	for (int i = 0; i < days; i++) {
+		std::vector<std::pair<int, int>> hexesToCheck;
+		for (auto &hex : flippedHexes) {
+			hexesToCheck.push_back(hex);
+			std::vector<std::pair<int, int>> neighbors = GetNeighbors(hex);
+			hexesToCheck.insert(hexesToCheck.end(), neighbors.begin(), neighbors.end());
+		}
+
+		std::set<std::pair<int, int>> newFlippedHexes;
+		for (auto &hex : hexesToCheck) {
+			int activeNeighbors = 0;
+			std::vector<std::pair<int, int>> neighbors = GetNeighbors(hex);
+			for (auto &neighbor : neighbors) {
+				if (flippedHexes.count(neighbor) == 1) {
+					activeNeighbors++;
+				}
+			}
+			if (flippedHexes.count(hex) == 1 && (activeNeighbors > 0 && activeNeighbors <= 2)) {
+				newFlippedHexes.insert(hex);
+			}
+			else if (flippedHexes.count(hex) == 0 && activeNeighbors == 2) {
+				newFlippedHexes.insert(hex);
+			}
+		}
+		flippedHexes = newFlippedHexes;
+		std::cout << "Day " << i + 1 << ": " << flippedHexes.size() << "\n";
+	}
+
+	std::cout << flippedHexes.size() << " tiles are black side up after " << days << " days on exhibition\n";
 }
